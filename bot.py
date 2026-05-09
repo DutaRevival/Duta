@@ -586,7 +586,7 @@ async def end_quiz_game(context: ContextTypes.DEFAULT_TYPE) -> None:
             # Mettre à jour l'XP de l'utilisateur
             if update_user_xp(user_id, score):
                 profile = get_user_profile(user_id)
-                results += f"  -> {username} est passé au niveau {profile["level"]} ({profile["league"]}) !\n"
+                results += f"  -> {username} est passé au niveau {profile['level']} ({profile['league']}) !\n"
 
     await context.bot.send_message(chat_id=chat_id, text=results, parse_mode="Markdown")
 
