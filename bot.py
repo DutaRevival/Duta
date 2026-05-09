@@ -436,8 +436,8 @@ async def quiz(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def send_quiz_question(update: Update, context: ContextTypes.DEFAULT_TYPE, chat_id: int) -> None:
     game_state = active_quiz_games[chat_id]
-    q_index = game_state["current_question_index"]
-    questions = game_state["questions"]
+    q_index = game_state['current_question_index']
+    questions = game_state['questions']
 
     if q_index >= len(questions):
         await end_quiz_game(context) # Toutes les questions ont été posées
@@ -453,9 +453,9 @@ async def send_quiz_question(update: Update, context: ContextTypes.DEFAULT_TYPE,
 
     # Envoyer la question
     question_message = await context.bot.send_message(chat_id=chat_id, text=question_text, reply_markup=reply_markup)
-    game_state["question_message_id"] = question_message.message_id
-    game_state["players_answers"] = {} # Réinitialiser les réponses pour la nouvelle question
-    game_state["start_time"] = datetime.now() # Réinitialiser le timer pour la question
+    game_state['question_message_id'] = question_message.message_id
+    game_state['players_answers'] = {} # Réinitialiser les réponses pour la nouvelle question
+    game_state['start_time'] = datetime.now() # Réinitialiser le timer pour la question
 
     # Lancer le timer pour la question
     context.job_queue.run_once(evaluate_quiz_question, 10, data=chat_id, name=f"quiz_q_timer_{chat_id}_{q_index}")
@@ -471,7 +471,7 @@ async def update_quiz_timer(context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     game_state = active_quiz_games[chat_id]
-    elapsed_time = (datetime.now() - game_state["start_time"]).total_seconds()
+    elapsed_time = (datetime.now() - game_state['start_time']).total_seconds()
     remaining_time = 10 - int(elapsed_time)
 
     if remaining_time < 0:
@@ -480,7 +480,8 @@ async def update_quiz_timer(context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         await context.bot.edit_message_text(
             chat_id=chat_id,
-            message_id=game_state["timer_message_id"],
+            message_id=game_state['
+        timer_message_id'],
             text=f"Temps restant : 0:{remaining_time:02d}"
         )
     except Exception as e:
@@ -492,18 +493,18 @@ async def evaluate_quiz_question(context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     game_state = active_quiz_games[chat_id]
-    q_index = game_state["current_question_index"]
-    question_data = game_state["questions"][q_index]
+    q_index = game_state['current_question_index']
+    question_data = game_state['questions'][q_index]
     correct_answer = question_data['answer']
-    players_answers = game_state["players_answers"]
+    players_answers = game_state['players_answers']
 
     correct_players = []
     for user_id, answer_text in players_answers.items():
         if answer_text == correct_answer:
             correct_players.append(user_id)
-            if user_id not in game_state["players_scores"]:
-                game_state["players_scores"][user_id] = 0
-            game_state["players_scores"][user_id] += 10 # 10 points par bonne réponse
+            if user_id not in game_state['players_scores']:
+                game_state['players_scores'][user_id] = 0
+            game_state['players_scores'][user_id] += 10 # 10 points par bonne réponse
 
     feedback_text = f"La bonne réponse était : **{correct_answer}**\n"
     if correct_players:
@@ -514,8 +515,8 @@ async def evaluate_quiz_question(context: ContextTypes.DEFAULT_TYPE) -> None:
 
     # Supprimer le message de la question et du timer
     try:
-        await context.bot.delete_message(chat_id=chat_id, message_id=game_state["question_message_id"])
-        await context.bot.delete_message(chat_id=chat_id, message_id=game_state["timer_message_id"])
+        await context.bot.delete_message(chat_id=chat_id, message_id=game_state['question_message_id'])
+        await context.bot.delete_message(chat_id=chat_id, message_id=game_state['timer_message_id'])
     except Exception as e:
         logger.warning(f"Impossible de supprimer les messages du quiz: {e}")
 
@@ -544,17 +545,17 @@ async def quiz_button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE
         return
 
     game_state = active_quiz_games[chat_id]
-    q_index = game_state["current_question_index"]
-    question_data = game_state["questions"][q_index]
+    q_index = game_state['current_question_index']
+    question_data = game_state['questions'][q_index]
     
     selected_option_index = int(data[2])
-    selected_answer_text = question_data["options"][selected_option_index]
+    selected_answer_text = question_data['options'][selected_option_index]
 
-    if user_id in game_state["players_answers"]:
+    if user_id in game_state['players_answers']:
         await query.answer(text="Vous avez déjà répondu à cette question.", show_alert=True)
         return
 
-    game_state["players_answers"][user_id] = selected_answer_text
+    game_state['players_answers'][user_id] = selected_answer_text
     await query.answer(text=f"Votre réponse '{selected_answer_text}' a été enregistrée.")
 
 async def end_quiz_game(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -563,7 +564,7 @@ async def end_quiz_game(context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     game_state = active_quiz_games.pop(chat_id) # Supprimer le jeu actif
-    players_scores = game_state["players_scores"]
+    players_scores = game_state['players_scores']
 
     # Annuler les jobs de timer de la question si toujours actifs
     current_jobs = context.job_queue.get_jobs_by_name(f"quiz_q_timer_{chat_id}_{game_state['current_question_index']-1}")
@@ -581,7 +582,7 @@ async def end_quiz_game(context: ContextTypes.DEFAULT_TYPE) -> None:
         sorted_scores = sorted(players_scores.items(), key=lambda item: item[1], reverse=True)
         results += "Scores finaux du Quiz :\n"
         for user_id, score in sorted_scores:
-            username = user_data[user_id]["username"] if user_id in user_data else f"Joueur {user_id}"
+            username = user_data[user_id]['username'] if user_id in user_data else f"Joueur {user_id}"
             results += f"- {username}: {score} points\n"
             # Mettre à jour l'XP de l'utilisateur
             if update_user_xp(user_id, score):
@@ -598,11 +599,11 @@ async def score(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     username = profile["username"] or update.effective_user.first_name
     response_text = (
         f"**Profil de {username}**\n"
-        f"Pays: {profile["country"]}\n"
-        f"Ligue: {profile["league"]}\n"
-        f"Niveau: {profile["level"]} (XP: {profile["xp"]})\n"
-        f"Score Jumble: {profile["score_jumble"]}\n"
-        f"Score Quiz: {profile["score_quiz"]}\n"
+        f"Pays: {profile['country']}\n"
+        f"Ligue: {profile['league']}\n"
+        f"Niveau: {profile['level']} (XP: {profile['xp']})\n"
+        f"Score Jumble: {profile['score_jumble']}\n"
+        f"Score Quiz: {profile['score_quiz']}\n"
     )
     await update.message.reply_text(response_text, parse_mode="Markdown")
 
@@ -611,12 +612,12 @@ async def top(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("Aucun joueur enregistré pour le moment.")
         return
 
-    sorted_players = sorted(user_data.items(), key=lambda item: item[1]["xp"], reverse=True)
+    sorted_players = sorted(user_data.items(), key=lambda item: item[1]['xp'], reverse=True)
 
     response_text = "**Classement Mondial (Top 10)**\n"
     for i, (user_id, profile) in enumerate(sorted_players[:10]):
-        username = profile["username"] or f"Joueur {user_id}"
-        response_text += f"{i+1}. {username} (Niveau {profile["level"]}, XP: {profile["xp"]}) - {profile["league"]}\n"
+        username = profile['username'] or f"Joueur {user_id}"
+        response_text += f"{i+1}. {username} (Niveau {profile['level']}, XP: {profile['xp']}) - {profile['league']}\n"
     
     await update.message.reply_text(response_text, parse_mode="Markdown")
 
