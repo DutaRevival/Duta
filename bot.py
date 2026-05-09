@@ -566,10 +566,10 @@ async def end_quiz_game(context: ContextTypes.DEFAULT_TYPE) -> None:
     players_scores = game_state["players_scores"]
 
     # Annuler les jobs de timer de la question si toujours actifs
-    current_jobs = context.job_queue.get_jobs_by_name(f"quiz_q_timer_{chat_id}_{game_state["current_question_index"]-1}")
+    current_jobs = context.job_queue.get_jobs_by_name(f"quiz_q_timer_{chat_id}_{game_state['current_question_index']-1}")
     for job in current_jobs:
         job.schedule_removal()
-    current_jobs = context.job_queue.get_jobs_by_name(f"quiz_timer_{chat_id}_{game_state["current_question_index"]-1}")
+    current_jobs = context.job_queue.get_jobs_by_name(f"quiz_timer_{chat_id}_{game_state['current_question_index']-1}")
     for job in current_jobs:
         job.schedule_removal()
 
